@@ -1,0 +1,12 @@
+[package]
+name = "ocs-server-dummy"
+version = "0.1.0"
+authors = ["Björn Mellström <bjorn.mellstrom@proceranetworks.com>"]
+
+[dependencies]
+getopts = "0.2"
+byteorder = "0.4"
+bitflags = "0.7"
+
+[profile.release]
+lto = true
