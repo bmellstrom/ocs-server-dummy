@@ -17,7 +17,9 @@ Non-goals
 Specifications
 --------------
 Diameter base protocol: [RFC 6733](https://tools.ietf.org/html/rfc6733)
+
 Credit control application: [RFC 4006](https://tools.ietf.org/html/rfc4006)
+
 Gy protocol: 3GPP TS 32.299 (overrides RFC 4006 in some places).
 
 Compiling
