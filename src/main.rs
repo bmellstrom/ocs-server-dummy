@@ -85,16 +85,16 @@ fn handle_client(mut stream: TcpStream, config: Arc<Config>) {
 }
 
 fn process_client(config: &Config, stream: &mut TcpStream, read_buffer: &mut [u8], write_buffer: &mut Vec<u8>, ccr_buffer: &mut gy::CcRequest) -> Result<(), ClientError> {
-    let header = try!(read_header(stream));
-    let payload = try!(read_payload(&header, stream, read_buffer));
-    try!(handle_packet_and_flush(config, &header, payload, write_buffer, ccr_buffer, stream));
+    let header = read_header(stream)?;
+    let payload = read_payload(&header, stream, read_buffer)?;
+    handle_packet_and_flush(config, &header, payload, write_buffer, ccr_buffer, stream)?;
     Ok(())
 }
 
 fn read_header(stream: &mut TcpStream) -> Result<MessageHeader, ClientError> {
     let mut headbuf = [0u8; 20];
-    try!(stream.read_exact(&mut headbuf)); // TODO: Read data in larger batches
-    Ok(try!(MessageHeader::parse(&headbuf)))
+    stream.read_exact(&mut headbuf)?; // TODO: Read data in larger batches
+    Ok(MessageHeader::parse(&headbuf)?)
 }
 
 fn read_payload<'a>(header: &MessageHeader, stream: &mut TcpStream, buffer: &'a mut [u8]) -> Result<&'a [u8], ClientError> {
@@ -103,14 +103,14 @@ fn read_payload<'a>(header: &MessageHeader, stream: &mut TcpStream, buffer: &'a 
     if plen_us > buffer.len() {
         return Err(ClientError::ReadBufferOverflow(plen));
     }
-    try!(stream.read_exact(&mut buffer[0..plen_us]));
+    stream.read_exact(&mut buffer[0..plen_us])?;
     Ok(&buffer[0..plen_us])
 }
 
 fn handle_packet_and_flush(config: &Config, header: &MessageHeader, payload: &[u8], output: &mut Vec<u8>, ccr: &mut gy::CcRequest, stream: &mut TcpStream) -> Result<(), ClientError> {
     output.clear();
     let connected = handle_packet(&config, &header, payload, output, ccr);
-    try!(stream.write_all(&output));
+    stream.write_all(&output)?;
     if !connected {
         return Err(ClientError::DisconnectRequested);
     }

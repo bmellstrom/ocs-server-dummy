@@ -26,7 +26,7 @@ impl MessageHeader {
             return Err(ParseError::InvalidMessageLength);
         }
         let flags_and_code = BigEndian::read_u32(&buffer[4..8]);
-        let flags = try!(MessageFlags::from_bits((flags_and_code >> 24) as u8).ok_or(ParseError::InvalidBitInHeader));
+        let flags = MessageFlags::from_bits((flags_and_code >> 24) as u8).ok_or(ParseError::InvalidBitInHeader)?;
         Ok(MessageHeader {
             command_id: CommandId {
                 code: flags_and_code & 0x00FFFFFF,

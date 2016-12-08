@@ -22,7 +22,7 @@ impl AvpHeader {
         }
         let code = BigEndian::read_u32(&buffer[0..4]);
         let flags_and_length = BigEndian::read_u32(&buffer[4..8]);
-        let flags = try!(AvpFlags::from_bits((flags_and_length >> 24) as u8).ok_or(ParseError::InvalidAvpBits));
+        let flags = AvpFlags::from_bits((flags_and_length >> 24) as u8).ok_or(ParseError::InvalidAvpBits)?;
         let vendor_id = if flags.contains(avp_flags::VENDOR) {
             if buffer.len() < VENDOR_AVP_HEADER_SIZE {
                 return Err(ParseError::InvalidAvpLength);

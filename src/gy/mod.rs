@@ -67,20 +67,20 @@ impl CcRequest {
 fn parse_ccr_avp(avp_id: AvpId, payload: &[u8], result: &mut CcRequest) -> Result<(), ParseError> {
     match avp_id {
         diameter::avps::SESSION_ID => {
-            try!(ok_or(result.session_id.is_empty(), ParseError::AvpOccursTooManyTimes));
-            try!(ok_or(!payload.is_empty(), ParseError::InvalidAvpValue));
+            ok_or(result.session_id.is_empty(), ParseError::AvpOccursTooManyTimes)?;
+            ok_or(!payload.is_empty(), ParseError::InvalidAvpValue)?;
             result.session_id.extend_from_slice(payload);
         }
         avps::CC_REQUEST_NUMBER => {
-            try!(ok_or(result.request_number.is_none(), ParseError::AvpOccursTooManyTimes));
-            result.request_number = Some(try!(parse_u32(payload)));
+            ok_or(result.request_number.is_none(), ParseError::AvpOccursTooManyTimes)?;
+            result.request_number = Some(parse_u32(payload)?);
         }
         avps::CC_REQUEST_TYPE => {
-            try!(ok_or(result.request_type.is_none(), ParseError::AvpOccursTooManyTimes));
-            result.request_type = Some(try!(parse_u32(payload)));
+            ok_or(result.request_type.is_none(), ParseError::AvpOccursTooManyTimes)?;
+            result.request_type = Some(parse_u32(payload)?);
         }
         avps::MULTIPLE_SERVICES_CC => {
-            result.services.push(try!(parse_service(payload)));
+            result.services.push(parse_service(payload)?);
         }
         _ => {}
     }
@@ -89,19 +89,19 @@ fn parse_ccr_avp(avp_id: AvpId, payload: &[u8], result: &mut CcRequest) -> Resul
 
 fn parse_service(buffer: &[u8]) -> Result<CcService, ParseError> {
     let mut service = CcService { service_id: None, rating_group: None, units_requested: false };
-    try!(parse_avps(buffer, &parse_service_avp, &mut service));
+    parse_avps(buffer, &parse_service_avp, &mut service)?;
     Ok(service)
 }
 
 fn parse_service_avp(avp_key: AvpId, payload: &[u8], result: &mut CcService) -> Result<(), ParseError> {
     match avp_key {
         avps::SERVICE_IDENTIFIER => {
-            try!(ok_or(result.service_id.is_none(), ParseError::AvpOccursTooManyTimes));
-            result.service_id = Some(try!(parse_u32(payload)));
+            ok_or(result.service_id.is_none(), ParseError::AvpOccursTooManyTimes)?;
+            result.service_id = Some(parse_u32(payload)?);
         }
         avps::RATING_GROUP => {
-            try!(ok_or(result.rating_group.is_none(), ParseError::AvpOccursTooManyTimes));
-            result.rating_group = Some(try!(parse_u32(payload)));
+            ok_or(result.rating_group.is_none(), ParseError::AvpOccursTooManyTimes)?;
+            result.rating_group = Some(parse_u32(payload)?);
         }
         avps::REQUESTED_SERVICE_UNIT => {
             result.units_requested = true;
