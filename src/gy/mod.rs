@@ -15,6 +15,7 @@ pub mod commands {
 
 pub mod avps {
     use diameter::avps::AvpId;
+    use gy;
 
     pub const CC_REQUEST_NUMBER: AvpId = AvpId { code: 415, vendor_id: 0 };
     pub const CC_REQUEST_TYPE: AvpId = AvpId { code: 416, vendor_id: 0 };
@@ -30,6 +31,8 @@ pub mod avps {
     pub const CC_OUTPUT_OCTETS: AvpId = AvpId { code: 414, vendor_id: 0 };
     pub const CC_TOTAL_OCTETS: AvpId = AvpId { code: 421, vendor_id: 0 };
     pub const CC_TIME: AvpId = AvpId { code: 420, vendor_id: 0 };
+    pub const TIME_QUOTA_THRESHOLD: AvpId = AvpId { code: 868, vendor_id: gy::TGPP_VENDOR_ID };
+    pub const VOLUME_QUOTA_THRESHOLD: AvpId = AvpId { code: 869, vendor_id: gy::TGPP_VENDOR_ID };
 }
 
 pub struct CcRequest {

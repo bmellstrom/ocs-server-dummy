@@ -189,8 +189,8 @@ fn put_service(config: &Config, service: &gy::CcService, builder: &mut MessageBu
     sb.put_avp_u32_option(gy::avps::RATING_GROUP, avp_flags::NONE, service.rating_group);
     if service.units_requested {
         sb.put_avp_u32_nonzero(gy::avps::VALIDITY_TIME, avp_flags::NONE, config.validity_time);
-        sb.put_avp_u32_nonzero(gy::avps::CC_TIME, avp_flags::NONE, config.time_threshold);
-        sb.put_avp_u32_nonzero(gy::avps::CC_TIME, avp_flags::NONE, config.volume_threshold);
+        sb.put_avp_u32_nonzero(gy::avps::TIME_QUOTA_THRESHOLD, avp_flags::NONE, config.time_threshold);
+        sb.put_avp_u32_nonzero(gy::avps::VOLUME_QUOTA_THRESHOLD, avp_flags::NONE, config.volume_threshold);
         sb.begin_avp(gy::avps::GRANTED_SERVICE_UNIT, avp_flags::NONE)
             .put_avp_u32_nonzero(gy::avps::CC_TIME, avp_flags::NONE, config.time)
             .put_avp_u64_nonzero(gy::avps::CC_INPUT_OCTETS, avp_flags::NONE, config.input_octets)
