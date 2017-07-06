@@ -85,6 +85,16 @@ impl<'a> MessageBuilder<'a> {
         self
     }
 
+    pub fn put_avp_address<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags, address: &[u8]) -> &'b mut MessageBuilder<'a> {
+        self.write_header(avp_id, flags, 2 + address.len() as u32);
+        let pos = self.buffer.len();
+        extend(self.buffer, 2);
+        write_u16(self.buffer, pos, 1);
+        self.buffer.extend_from_slice(address);
+        self.write_padding();
+        self
+    }
+
     pub fn begin_avp<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags) -> MessageBuilder<'b> {
         let start_pos = self.buffer.len();
         self.write_header(avp_id, flags, 0);
@@ -130,6 +140,11 @@ impl<'a> Drop for MessageBuilder<'a> {
 fn extend(vec: &mut Vec<u8>, n: usize) {
     let new_size = vec.len() + n;
     vec.resize(new_size, 0);
+}
+
+#[inline]
+fn write_u16(dst: &mut Vec<u8>, pos: usize, value: u16) {
+    BigEndian::write_u16(&mut dst[pos..pos + 2], value);
 }
 
 #[inline]
