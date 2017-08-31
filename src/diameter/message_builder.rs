@@ -1,6 +1,7 @@
 extern crate byteorder;
 
 use byteorder::{ByteOrder, BigEndian};
+use std::net::Ipv4Addr;
 use super::avps::AvpId;
 use super::avp_flags::AvpFlags;
 use super::commands::CommandId;
@@ -85,12 +86,13 @@ impl<'a> MessageBuilder<'a> {
         self
     }
 
-    pub fn put_avp_address<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags, address: &[u8]) -> &'b mut MessageBuilder<'a> {
-        self.write_header(avp_id, flags, 2 + address.len() as u32);
+    pub fn put_avp_address<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags, address: Ipv4Addr) -> &'b mut MessageBuilder<'a> {
+        let address_octets: &[u8] = &(address.octets());
+        self.write_header(avp_id, flags, 2 + address_octets.len() as u32);
         let pos = self.buffer.len();
         extend(self.buffer, 2);
         write_u16(self.buffer, pos, 1);
-        self.buffer.extend_from_slice(address);
+        self.buffer.extend_from_slice(address_octets);
         self.write_padding();
         self
     }
