@@ -10,7 +10,7 @@ use std::process;
 use std::env;
 use std::sync::Arc;
 use std::io::{Write, Read};
-use std::net::{TcpListener, TcpStream, IpAddr};
+use std::net::{TcpListener, TcpStream, IpAddr, Ipv4Addr};
 use std::thread;
 use std::str::FromStr;
 use std::convert::From;
@@ -27,6 +27,7 @@ struct Config {
     origin_realm: String,
     product_name: String,
     firmware_revision: u32,
+    host_ip_address: Ipv4Addr,
     vendor_id: u32,
     validity_time: u32,
     time: u32,
@@ -141,6 +142,7 @@ fn handle_cer(config: &Config, header: &MessageHeader, output: &mut Vec<u8>) {
         .put_avp_u32(avps::VENDOR_ID, avp_flags::NONE, config.vendor_id)
         .put_avp_bytes(avps::PRODUCT_NAME, avp_flags::NONE, config.product_name.as_bytes())
         .put_avp_u32(avps::FIRMWARE_REVISION, avp_flags::NONE, config.firmware_revision)
+        .put_avp_address(avps::HOST_IP_ADDRESS, avp_flags::NONE, config.host_ip_address)
         .put_avp_u32(avps::SUPPORTED_VENDOR_ID, avp_flags::NONE, gy::TGPP_VENDOR_ID)
         .put_avp_u32(avps::AUTH_APPLICATION_ID, avp_flags::NONE, gy::APPLICATION_ID);
 }
@@ -222,6 +224,7 @@ fn parse_args() -> Matches {
     opts.optopt("", "origin-realm", "Value for the Origin-Realm AVP.", "STRING");
     opts.optopt("", "product-name", "Value for the Product-Name AVP.", "STRING");
     opts.optopt("", "firmware-revision", "Value for the Firmware-Revision AVP.", "NUMBER");
+    opts.optopt("", "host-ip-address", "Value for the Host-Ip-Address AVP.", "STRING");
     opts.optopt("", "vendor-id", "Value for the Vendor-ID AVP.", "NUMBER");
     opts.optopt("", "validity-time", "Value for the Validity-Time AVP.", "SECONDS");
     opts.optopt("", "time", "Value for the CC-Time AVP.", "SECONDS");
@@ -246,11 +249,18 @@ fn parse_args() -> Matches {
 }
 
 fn parse_config(matches: &Matches) -> Config {
+    let host_ip_address = get_str(matches, "host-ip-address", "127.0.0.1");
+    if Ipv4Addr::from_str(&host_ip_address).is_err() {
+        println!("Failed to parse host_ip_address: {}", host_ip_address);
+        process::exit(1);
+    }
+
     Config {
         origin_host: get_str(matches, "origin-host", "dummy_host"),
         origin_realm: get_str(matches, "origin-realm", "dummy_realm"),
         product_name: get_str(matches, "product-name", "Dummy OCS"),
         firmware_revision: get_u32(matches, "firmware-revision", 1),
+        host_ip_address: Ipv4Addr::from_str(&*host_ip_address).unwrap(),
         vendor_id: get_u32(matches, "vendor-id", 0xFFFFFFFF),
         validity_time: get_u32(matches, "validity-time", 15 * 60),
         time: get_u32(matches, "time", 0),

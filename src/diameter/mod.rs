@@ -40,6 +40,7 @@ pub mod avps {
         VENDOR_ID                 266,         0;
         PRODUCT_NAME              269,         0;
         FIRMWARE_REVISION         267,         0;
+        HOST_IP_ADDRESS           257,         0;
         SUPPORTED_VENDOR_ID       265,         0;
         AUTH_APPLICATION_ID       258,         0;
     );
