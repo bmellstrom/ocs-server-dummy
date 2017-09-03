@@ -1,6 +1,7 @@
 extern crate byteorder;
 
 use byteorder::{ByteOrder, BigEndian};
+use std::net::IpAddr;
 use super::avps::AvpId;
 use super::avp_flags::AvpFlags;
 use super::commands::CommandId;
@@ -85,6 +86,27 @@ impl<'a> MessageBuilder<'a> {
         self
     }
 
+    pub fn put_avp_address<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags, address: IpAddr) -> &'b mut MessageBuilder<'a> {
+        match address {
+            IpAddr::V4(a) => {
+                self.write_header(avp_id, flags, 2 + 4);
+                let pos = self.buffer.len();
+                extend(self.buffer, 2);
+                write_u16(self.buffer, pos, 1); // https://www.iana.org/assignments/address-family-numbers/address-family-numbers.xhtml
+                self.buffer.extend_from_slice(&a.octets());
+            }
+            IpAddr::V6(a) => {
+                self.write_header(avp_id, flags, 2 + 16);
+                let pos = self.buffer.len();
+                extend(self.buffer, 2);
+                write_u16(self.buffer, pos, 2);
+                self.buffer.extend_from_slice(&a.octets());
+            }
+        };
+        self.write_padding();
+        self
+    }
+
     pub fn begin_avp<'b>(&'b mut self, avp_id: AvpId, flags: AvpFlags) -> MessageBuilder<'b> {
         let start_pos = self.buffer.len();
         self.write_header(avp_id, flags, 0);
@@ -130,6 +152,11 @@ impl<'a> Drop for MessageBuilder<'a> {
 fn extend(vec: &mut Vec<u8>, n: usize) {
     let new_size = vec.len() + n;
     vec.resize(new_size, 0);
+}
+
+#[inline]
+fn write_u16(dst: &mut Vec<u8>, pos: usize, value: u16) {
+    BigEndian::write_u16(&mut dst[pos..pos + 2], value);
 }
 
 #[inline]

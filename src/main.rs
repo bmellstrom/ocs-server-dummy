@@ -109,31 +109,39 @@ fn read_payload<'a>(header: &MessageHeader, stream: &mut TcpStream, buffer: &'a 
 
 fn handle_packet_and_flush(config: &Config, header: &MessageHeader, payload: &[u8], output: &mut Vec<u8>, ccr: &mut gy::CcRequest, stream: &mut TcpStream) -> Result<(), ClientError> {
     output.clear();
-    let connected = handle_packet(&config, &header, payload, output, ccr);
-    stream.write_all(&output)?;
-    if !connected {
-        return Err(ClientError::DisconnectRequested);
+    match handle_packet(&config, &header, payload, output, ccr, stream) {
+        Ok(()) => {
+            stream.write_all(&output)?;
+            Ok(())
+        }
+        Err(ClientError::DisconnectRequested) => {
+            stream.write_all(&output)?;
+            Err(ClientError::DisconnectRequested)
+        }
+        Err(e) => {
+            Err(e)
+        }
     }
-    Ok(())
 }
 
-fn handle_packet(config: &Config, header: &MessageHeader, payload: &[u8], output: &mut Vec<u8>, ccr: &mut gy::CcRequest) -> bool {
+fn handle_packet(config: &Config, header: &MessageHeader, payload: &[u8], output: &mut Vec<u8>, ccr: &mut gy::CcRequest, stream: &mut TcpStream) -> Result<(), ClientError> {
     if header.flags.contains(message_flags::REQUEST) {
         match header.command_id {
-            commands::CAPABILITIES_EXCHANGE => handle_cer(config, header, output),
+            commands::CAPABILITIES_EXCHANGE => handle_cer(config, header, output, stream)?,
             commands::DEVICE_WATCHDOG => handle_dwr(config, header, output),
             commands::DISCONNECT_PEER => {
                 handle_dpr(config, header, output);
-                return false;
+                return Err(ClientError::DisconnectRequested);
             }
             gy::commands::CREDIT_CONTROL => handle_gy_ccr(config, header, payload, output, ccr),
             _ => handle_unknown(config, header, output)
         }
     }
-    true
+    Ok(())
 }
 
-fn handle_cer(config: &Config, header: &MessageHeader, output: &mut Vec<u8>) {
+fn handle_cer(config: &Config, header: &MessageHeader, output: &mut Vec<u8>, stream: &mut TcpStream) -> Result<(), ClientError> {
+    let local_address = stream.local_addr()?.ip();
     MessageBuilder::new(output, message_flags::NONE, header.command_id, header.hop_by_hop, header.end_to_end)
         .put_avp_u32(avps::RESULT_CODE, avp_flags::NONE, result_codes::SUCCESS)
         .put_avp_bytes(avps::ORIGIN_HOST, avp_flags::NONE, config.origin_host.as_bytes())
@@ -141,8 +149,10 @@ fn handle_cer(config: &Config, header: &MessageHeader, output: &mut Vec<u8>) {
         .put_avp_u32(avps::VENDOR_ID, avp_flags::NONE, config.vendor_id)
         .put_avp_bytes(avps::PRODUCT_NAME, avp_flags::NONE, config.product_name.as_bytes())
         .put_avp_u32(avps::FIRMWARE_REVISION, avp_flags::NONE, config.firmware_revision)
+        .put_avp_address(avps::HOST_IP_ADDRESS, avp_flags::NONE, local_address)
         .put_avp_u32(avps::SUPPORTED_VENDOR_ID, avp_flags::NONE, gy::TGPP_VENDOR_ID)
         .put_avp_u32(avps::AUTH_APPLICATION_ID, avp_flags::NONE, gy::APPLICATION_ID);
+    Ok(())
 }
 
 fn handle_dwr(config: &Config, header: &MessageHeader, output: &mut Vec<u8>) {
